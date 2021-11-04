@@ -1,0 +1,1 @@
+# jsDelivr CDN For Typecho本插件用于将文章附件上传至Github，并使用jsDelivr进行文件访问加速。>代码根据 [UploadGithubForTypecho 1.1.1](https://github.com/AyagawaSeirin/UploadGithubForTypecho/) 修改而来
