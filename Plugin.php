@@ -5,7 +5,7 @@
  * @package JsDelivr
  * @author 0x401
  * @link https://github.com/0x401/jsDelivr-For-Typecho
- * @version 1.0.0
+ * @version 1.1.0
  *
  */
 
@@ -52,6 +52,7 @@ class JsDelivr_Plugin implements Typecho_Plugin_Interface
     $github_branch = new Typecho_Widget_Helper_Form_Element_Text('githubBranch', NULL, 'main', '仓库分支名');
     $github_token = new Typecho_Widget_Helper_Form_Element_Text('githubToken', NULL, '', 'Github账号token');
     $github_directory = new Typecho_Widget_Helper_Form_Element_Text('githubDirectory', NULL, '/te', 'Github仓库内的上传目录', '比如/te，最后一位不需要斜杠');
+    $github_version = new Typecho_Widget_Helper_Form_Element_Text('githubVersion', NULL, '', '引用版本', '为空引用仓库文件，如果修改文件，jsDelivr 不会及时更新；latest 引用最新release版本；版本号引用指定版本文件，需要在 github 上手动 releases。');
     $if_save = new Typecho_Widget_Helper_Form_Element_Select('ifSave', array('save' => '保存到本地', 'notsave' => '不保存到本地'), 'save', '是否保存在本地：', '是否将上传的文件保存在本地。');
     $commit_name = new Typecho_Widget_Helper_Form_Element_Text('commitName', NULL, 'JsDelivr', '提交文件者名称', '提交Commit的提交者名称，留空则为仓库所属者。');
     $commit_email = new Typecho_Widget_Helper_Form_Element_Text('commitEmail', NULL, 'JsDelivr@typecho.com', '提交文件者邮箱', '提交Commit的提交者邮箱，留空则为仓库所属者。');
@@ -61,6 +62,7 @@ class JsDelivr_Plugin implements Typecho_Plugin_Interface
     $form->addInput($github_token->addRule('required', '请输入Github账号token'));
     $form->addInput($github_branch->addRule('required', '请输入您的仓库分支名'));
     $form->addInput($github_directory->addRule('required', '请输入Github上传目录'));
+    $form->addInput($github_version);
     $form->addInput($if_save);
     $form->addInput($commit_name);
     $form->addInput($commit_email);
@@ -197,8 +199,7 @@ class JsDelivr_Plugin implements Typecho_Plugin_Interface
   private static function writeLog($remotePath, $type, $result)
   {
     $date = date('[Y-m-d H:i:s]');
-    $msg = json_decode($result['output'], true)['message'];
-    $text = $date . " " . $remotePath . " [" . $type . "][" . $result['code'] . "]" . $msg . PHP_EOL;
+    $text = $date . " " . $remotePath . " [" . $type . "][" . $result['code'] . "]" . PHP_EOL;
     $log_file = dirname(__FILE__) . "/log.log";
     if (!file_exists($log_file)) {
       $file = fopen($log_file, 'w');
@@ -320,8 +321,7 @@ class JsDelivr_Plugin implements Typecho_Plugin_Interface
     $options = Typecho_Widget::widget('Widget_Options')->plugin('JsDelivr');
     $path = $content['attachment']->path;
     $sha = self::getSHA($path, $options);
-    $result = self::remoteHandler($options, $path, 'delete', NULL, $sha);
-    self::writeLog($path, 'delete', $result);
+    self::remoteHandler($options, $path, 'delete', NULL, $sha);
     //删除本地文件
     $filename = __TYPECHO_ROOT_DIR__ . $content['attachment']->path;
     if ($options->ifSave == 'save' && file_exists($filename) == true) {
@@ -343,7 +343,14 @@ class JsDelivr_Plugin implements Typecho_Plugin_Interface
   {
     $options = Typecho_Widget::widget('Widget_Options')->plugin('JsDelivr');
     $remotePath = str_replace(self::UPLOAD_DIR, '', $content['attachment']->path);
-    return "https://cdn.jsdelivr.net/gh/" . $options->githubUser . "/" . $options->githubRepo . '@' . $options->githubBranch . $options->githubDirectory . $remotePath;
+    if ($options->githubVersion == "") {
+      $version = "@" . $options->githubBranch;
+    } elseif ($options->githubVersion == "latest") {
+      $version = "@latest";
+    } else {
+      $version = "@" . $options->githubVersion;
+    }
+    return "https://cdn.jsdelivr.net/gh/" . $options->githubUser . "/" . $options->githubRepo . $version . $options->githubDirectory . $remotePath;
   }
 
   /**
