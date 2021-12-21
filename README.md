@@ -1,4 +1,5 @@
 # jsDelivr CDN For Typecho
+>2021-12-21 [jsDelivr 的备案已被注销](https://twitter.com/jsDelivr/status/1472870623051456522)，现在没有大陆节点了
 >根据 [UploadGithubForTypecho 1.1.1](https://github.com/AyagawaSeirin/UploadGithubForTypecho/) 修改而来
 
 本插件用于将文章附件上传至Github，在插入附件的时候使用 jsDelivr 的 CDN 地址，达到文件访问加速。
